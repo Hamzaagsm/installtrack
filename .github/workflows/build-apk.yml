@@ -15,13 +15,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v3
       - name: Accept licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
       - name: Build debug APK
         run: |
           cd android
+          chmod +x gradlew || true
           gradle assembleDebug --no-daemon -x lint
       - name: Rename APK
         run: |
