@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamza Mobile — Seller Dashboard</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 16px; }
+  h1 { text-align: center; color: #fff; }
+  .card { background: #1e293b; border-radius: 12px; padding: 16px; margin: 12px auto; max-width: 720px; }
+  .card.tamper { border: 2px solid #ef4444; }
+  input, button, textarea { font-size: 15px; padding: 10px; border-radius: 8px; border: none; margin: 4px 0; }
+  input, textarea { width: 100%; background: #334155; color: #fff; }
+  button { cursor: pointer; font-weight: bold; color: #fff; }
+  .btn-lock { background: #dc2626; } .btn-unlock { background: #16a34a; }
+  .btn-ring { background: #d97706; } .btn-msg { background: #2563eb; }
+  .btn-release { background: #7c3aed; } .btn-wipe { background: #991b1b; }
+  .btn-small { padding: 8px 12px; font-size: 14px; margin: 3px; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .status-active { color: #4ade80; font-weight: bold; }
+  .status-locked { color: #f87171; font-weight: bold; }
+  .status-released { color: #a78bfa; font-weight: bold; }
+  .tamper-banner { background: #7f1d1d; color: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; }
+  .muted { color: #94a3b8; font-size: 13px; }
+  #configForm { max-width: 720px; margin: 0 auto; }
+  a { color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<h1>📱 Hamza Mobile — Seller Dashboard</h1>
+
+<div class="card" id="configCard">
+  <h3>🔧 Firebase Config</h3>
+  <div id="configForm">
+    <input id="cfgApiKey" placeholder="apiKey" value="AIzaSyDsWdTh2rQd1daCrtRKiuuUDF1s5kTn8vE">
+    <input id="cfgAuthDomain" placeholder="authDomain (project.firebaseapp.com)">
+    <input id="cfgDbUrl" placeholder="databaseURL" value="https://hamza-installtrack-default-rtdb.asia-southeast1.firebasedatabase.app">
+    <input id="cfgProjectId" placeholder="projectId">
+    <button class="btn-msg btn-small" onclick="saveConfig()">💾 Save &amp; Connect</button>
+    <p class="muted">Ye browser me save rehta hai (localStorage). Console: <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a></p>
+  </div>
+  <p id="connStatus" class="muted">Not connected</p>
+</div>
+
+<div id="devices"></div>
+
+<script>
+let db = null;
+
+function saveConfig() {
+  const cfg = {
+    apiKey: document.getElementById('cfgApiKey').value.trim(),
+    authDomain: document.getElementById('cfgAuthDomain').value.trim(),
+    databaseURL: document.getElementById('cfgDbUrl').value.trim(),
+    projectId: document.getElementById('cfgProjectId').value.trim()
+  };
+  if (!cfg.databaseURL.startsWith('https://')) { alert('databaseURL ghalat hai'); return; }
+  localStorage.setItem('it_cfg', JSON.stringify(cfg));
+  connect();
+}
+
+function loadConfig() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('it_cfg') || '{}');
+    if (cfg.apiKey) document.getElementById('cfgApiKey').value = cfg.apiKey;
+    if (cfg.authDomain) document.getElementById('cfgAuthDomain').value = cfg.authDomain;
+    if (cfg.databaseURL) document.getElementById('cfgDbUrl').value = cfg.databaseURL;
+    if (cfg.projectId) document.getElementById('cfgProjectId').value = cfg.projectId;
+    return cfg;
+  } catch (e) { return {}; }
+}
+
+function connect() {
+  const cfg = loadConfig();
+  if (!cfg.databaseURL || !cfg.apiKey) {
+    document.getElementById('connStatus').textContent = 'Pehle config bharein';
+    return;
+  }
+  try {
+    if (firebase.apps.length === 0) firebase.initializeApp(cfg);
+    db = firebase.database();
+    document.getElementById('connStatus').textContent = '✅ Connected: ' + cfg.databaseURL;
+    watchDevices();
+  } catch (e) {
+    document.getElementById('connStatus').textContent = '❌ ' + e.message;
+  }
+}
+
+function sendCmd(id, cmd, confirmMsg) {
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  db.ref('/devices/' + id + '/command').set(cmd)
+    .then(() => alert('Command bhej di: ' + cmd.split(':')[0]))
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function doLock(id) {
+  const msg = prompt('Lock screen par pegham (khali = default):',
+    'Qist ada karein — Hamza Mobile se rabta karein');
+  if (msg === null) return;
+  db.ref('/devices/' + id + '/lockMessage').set(msg || '')
+    .then(() => sendCmd(id, 'LOCK'));
+}
+
+function doMessage(id) {
+  const msg = prompt('Pegham likhein:');
+  if (!msg) return;
+  sendCmd(id, 'MESSAGE:' + msg);
+}
+
+function doWipe(id) {
+  const pin = prompt('⚠️ SELLER PIN (wipe confirm):');
+  if (!pin) return;
+  if (!confirm('SACH MEIN WIPE? Phone ka data delete ho jayega!')) return;
+  sendCmd(id, 'WIPE:' + pin);
+}
+
+function doRelease(id) {
+  if (!confirm('Qist mukammal? App release ho jayegi aur buyer uninstall kar sakega.')) return;
+  sendCmd(id, 'RELEASE');
+}
+
+function ackTamper(id) {
+  if (!confirm('Tamper alert clear karein?')) return;
+  db.ref('/devices/' + id + '/tamper').remove();
+}
+
+function updatePaid(id, current) {
+  const v = prompt('Ada shuda raqam update karein:', current || '0');
+  if (v === null) return;
+  db.ref('/devices/' + id + '/info/paid').set(v);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtTime(t) {
+  if (!t) return '-';
+  const d = new Date(Number(t));
+  return d.toLocaleString('en-PK');
+}
+
+function watchDevices() {
+  db.ref('/devices').on('value', snap => {
+    const devices = snap.val() || {};
+    const box = document.getElementById('devices');
+    box.innerHTML = '';
+    const ids = Object.keys(devices);
+    if (ids.length === 0) {
+      box.innerHTML = '<div class="card"><p class="muted">Koi device nahi mila. Buyer ke phone par app setup karein.</p></div>';
+      return;
+    }
+    ids.forEach(id => {
+      const d = devices[id] || {};
+      const info = d.info || {};
+      const loc = d.location || {};
+      const tamper = d.tamper || null;
+      const status = d.status || 'unknown';
+      const statusCls = status === 'active' ? 'status-active' : status === 'locked' ? 'status-locked' : 'status-released';
+      const mapLink = (loc.lat != null)
+        ? '<a target="_blank" href="https://maps.google.com/?q=' + loc.lat + ',' + loc.lng + '">📍 Map kholo</a>'
+        : '<span class="muted">location nahi mili</span>';
+
+      let total = 0, paid = 0;
+      try { total = parseInt(String(info.total || '0').replace(/[^0-9]/g, '')) || 0; } catch (e) {}
+      try { paid = parseInt(String(info.paid || '0').replace(/[^0-9]/g, '')) || 0; } catch (e) {}
+
+      const card = document.createElement('div');
+      card.className = 'card' + (tamper ? ' tamper' : '');
+      card.innerHTML =
+        (tamper ? '<div class="tamper-banner">🚨 CHHERKHANI! ' + esc(tamper.type || 'TAMPER') +
+          ' — ' + fmtTime(tamper.time) +
+          ' <button class="btn-small" onclick="ackTamper(\'' + id + '\')">Clear</button></div>' : '') +
+        '<h3>📱 ' + esc(info.name || id) + '</h3>' +
+        '<p>Status: <span class="' + statusCls + '">' + esc(status.toUpperCase()) + '</span>' +
+        ' &nbsp;|&nbsp; Admin: ' + (d.adminActive === 'false' ? '❌ OFF' : '✅ ON') + '</p>' +
+        '<p>💰 Kul: ' + esc(info.total || '-') + ' | ✅ Ada: ' + esc(info.paid || '0') +
+        ' | 📌 Baqi: ' + (total - paid) + ' | 📅 Mahana: ' + esc(info.monthly || '-') +
+        ' <button class="btn-small btn-msg" onclick="updatePaid(\'' + id + '\',\'' + esc(info.paid || '0') + '\')">Update</button></p>' +
+        '<p>' + mapLink + ' <span class="muted">Last seen: ' + fmtTime(d.lastSeen) + '</span></p>' +
+        '<div class="row">' +
+        '<button class="btn-small btn-lock" onclick="doLock(\'' + id + '\')">🔒 Lock</button>' +
+        '<button class="btn-small btn-unlock" onclick="sendCmd(\'' + id + '\',\'UNLOCK\')">🔓 Unlock</button>' +
+        '<button class="btn-small btn-ring" onclick="sendCmd(\'' + id + '\',\'RING\')">🔔 Ring</button>' +
+        '<button class="btn-small btn-msg" onclick="doMessage(\'' + id + '\')">💬 Pegham</button>' +
+        '<button class="btn-small btn-release" onclick="doRelease(\'' + id + '\')">✅ Release (Qist Done)</button>' +
+        '<button class="btn-small btn-wipe" onclick="doWipe(\'' + id + '\')">🗑️ Wipe</button>' +
+        '</div>' +
+        '<p class="muted">Device ID: ' + esc(id) + '</p>';
+      box.appendChild(card);
+    });
+  });
+}
+
+loadConfig();
+connect();
+</script>
+</body>
+</html>
