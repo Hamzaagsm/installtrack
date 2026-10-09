@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="#101828">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📱 Hamza Mobile — Qist Plan"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ye app aapki qist ke doran phone ki hifazat ke liye hai. Is se seller qist ada na hone par phone lock kar sakta hai aur phone ki location dekh sakta hai.\n\n⚠️ Agreement ke mutabiq: ye app QIST MUKAMMAL hone tak remove NAHI hogi. Qist poori hone par seller khud isay release kar dega, phir aap isay hata sakte hain."
+            android:textColor="#FFD54F"
+            android:textSize="14sp"
+            android:background="#263238"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Firebase Database URL (seller dega):" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etDbUrl"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="https://aapka-project.firebaseio.com"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:inputType="textUri" android:layout_marginBottom="8dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Database Auth (agar ho):" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etDbAuth"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="(khali bhi chal sakta hai)"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:layout_marginBottom="8dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Seller PIN (wipe protection):" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etSellerPin"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="seller ka khufia PIN"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:inputType="numberPassword" android:layout_marginBottom="16dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Kharidar ka naam:" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etBuyerName"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:layout_marginBottom="8dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Kul raqam:" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etTotalQist"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="misal: 50000"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:inputType="number" android:layout_marginBottom="8dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Mahana qist:" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etMonthly"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="misal: 5000"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:inputType="number" android:layout_marginBottom="8dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Ab tak ada:" android:textColor="#FFFFFF" />
+        <EditText android:id="@+id/etPaid"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="0"
+            android:textColor="#FFFFFF" android:textColorHint="#888888"
+            android:inputType="number" android:layout_marginBottom="16dp" />
+
+        <Button android:id="@+id/btnAdmin"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="🔐 Device Admin ON karo (LAZMI)"
+            android:layout_marginBottom="4dp" />
+        <TextView android:id="@+id/tvAdminStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="#FFFFFF" android:textSize="13sp"
+            android:layout_marginBottom="12dp" />
+
+        <Button android:id="@+id/btnLocation"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="📍 Location ON karo (LAZMI)"
+            android:layout_marginBottom="4dp" />
+        <TextView android:id="@+id/tvLocStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="#FFFFFF" android:textSize="13sp"
+            android:layout_marginBottom="16dp" />
+
+        <Button android:id="@+id/btnFinish"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="✅ SETUP MUKAMMAL KARO"
+            android:backgroundTint="#2E7D32"
+            android:layout_marginBottom="24dp" />
+
+    </LinearLayout>
+</ScrollView>
