@@ -11,6 +11,10 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            // Device Owner ho to policies reboot ke baad dobara pakki karo
+            if (DeviceOwnerHelper.isDeviceOwner(context)) {
+                DeviceOwnerHelper.applyDeviceOwnerPolicies(context);
+            }
             SharedPreferences p = context.getSharedPreferences("installtrack", Context.MODE_PRIVATE);
             if (p.getBoolean("setup_done", false)) {
                 Intent s = new Intent(context, TrackerService.class);

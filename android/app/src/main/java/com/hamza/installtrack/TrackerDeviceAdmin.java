@@ -20,7 +20,29 @@ public class TrackerDeviceAdmin extends DeviceAdminReceiver {
 
     @Override
     public void onEnabled(Context context, Intent intent) {
+        // Device Owner ho to policies foran lagao (QR provisioning ke baad
+        // bhi yehi call aati hai).
+        if (DeviceOwnerHelper.isDeviceOwner(context)) {
+            DeviceOwnerHelper.applyDeviceOwnerPolicies(context);
+        }
         Toast.makeText(context, "Device Admin ON — Qist Protection active", Toast.LENGTH_LONG).show();
+    }
+
+    /**
+     * QR provisioning mukammal hone par Android ye call karta hai.
+     * Policies lagao aur setup screen kholo taake seller baqi setup
+     * (Firebase, qist, consent) poora kar sake.
+     */
+    @Override
+    public void onProfileProvisioningComplete(Context context, Intent intent) {
+        if (DeviceOwnerHelper.isDeviceOwner(context)) {
+            DeviceOwnerHelper.applyDeviceOwnerPolicies(context);
+        }
+        try {
+            Intent i = new Intent(context, SetupActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            context.startActivity(i);
+        } catch (Exception ignored) {}
     }
 
     /**
