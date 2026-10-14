@@ -19,8 +19,8 @@ import android.widget.TextView;
  */
 public class MainActivity extends Activity {
 
-    private TextView tvInfo, tvStatus;
-    private Button btnReEnable;
+    private TextView tvInfo, tvStatus, tvDoStatus;
+    private Button btnReEnable, btnSellerRemove, btnQr;
     private BroadcastReceiver unlockReceiver;
 
     @Override
@@ -30,7 +30,21 @@ public class MainActivity extends Activity {
 
         tvInfo = findViewById(R.id.tvInfo);
         tvStatus = findViewById(R.id.tvStatus);
+        tvDoStatus = findViewById(R.id.tvDoStatus);
         btnReEnable = findViewById(R.id.btnReEnable);
+        btnSellerRemove = findViewById(R.id.btnSellerRemove);
+        btnQr = findViewById(R.id.btnQr);
+
+        btnSellerRemove.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, SellerRemoveActivity.class));
+            }
+        });
+        btnQr.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, QrActivity.class));
+            }
+        });
 
         btnReEnable.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -90,6 +104,12 @@ public class MainActivity extends Activity {
         } else {
             tvStatus.setText("⚠️ Protection OFF hai!\nQist agreement ke mutabiq dobara ON karein.");
             btnReEnable.setVisibility(View.VISIBLE);
+        }
+        // Device Owner status saaf dikhao — chhupa nahi
+        if (DeviceOwnerHelper.isDeviceOwner(this)) {
+            tvDoStatus.setText("🛡️ Device Owner ACTIVE — factory reset + uninstall block hai\nIs phone par InstallTrack management active hai");
+        } else {
+            tvDoStatus.setText("ℹ️ Device Owner nahi hai (sirf Device Admin). Enroll: ADB ya QR (README).");
         }
     }
 }

@@ -32,8 +32,9 @@ public class SetupActivity extends Activity {
 
     private EditText etDbUrl, etDbAuth, etSellerPin;
     private EditText etBuyerName, etTotalQist, etMonthly, etPaid;
-    private Button btnAdmin, btnLocation, btnFinish;
-    private TextView tvAdminStatus, tvLocStatus;
+    private Button btnAdmin, btnLocation, btnFinish, btnQr, btnShowAgreement;
+    private TextView tvAdminStatus, tvLocStatus, tvDoStatus, tvConsentFull;
+    private android.widget.CheckBox cbConsent;
 
     public static String getDeviceId(Context ctx) {
         String id = Settings.Secure.getString(ctx.getContentResolver(),
@@ -64,8 +65,30 @@ public class SetupActivity extends Activity {
         btnAdmin = findViewById(R.id.btnAdmin);
         btnLocation = findViewById(R.id.btnLocation);
         btnFinish = findViewById(R.id.btnFinish);
+        btnQr = findViewById(R.id.btnQr);
+        btnShowAgreement = findViewById(R.id.btnShowAgreement);
         tvAdminStatus = findViewById(R.id.tvAdminStatus);
         tvLocStatus = findViewById(R.id.tvLocStatus);
+        tvDoStatus = findViewById(R.id.tvDoStatus);
+        tvConsentFull = findViewById(R.id.tvConsentFull);
+        cbConsent = findViewById(R.id.cbConsent);
+
+        btnQr.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(SetupActivity.this, QrActivity.class));
+            }
+        });
+        btnShowAgreement.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (tvConsentFull.getVisibility() == View.VISIBLE) {
+                    tvConsentFull.setVisibility(View.GONE);
+                } else {
+                    tvConsentFull.setText(ConsentText.AGREEMENT_URDU
+                            + "\n\n" + ConsentText.AGREEMENT_ENGLISH);
+                    tvConsentFull.setVisibility(View.VISIBLE);
+                }
+            }
+        });
 
         btnAdmin.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { requestAdmin(); }
@@ -104,6 +127,12 @@ public class SetupActivity extends Activity {
         } else {
             tvAdminStatus.setText("❌ Device Admin OFF hai — ON karna lazmi hai");
             btnAdmin.setEnabled(true);
+        }
+        // Device Owner status — enrollment (ADB/QR) ka pata chale
+        if (DeviceOwnerHelper.isDeviceOwner(this)) {
+            tvDoStatus.setText("✅ Device Owner ACTIVE hai — factory reset + uninstall block hai");
+        } else {
+            tvDoStatus.setText("ℹ️ Device Owner nahi hai — enroll ke liye ADB (dpm set-device-owner) ya QR provisioning use karein (README dekhein)");
         }
         if (hasLocation()) {
             tvLocStatus.setText("✅ Location permission mil gayi");
@@ -158,6 +187,12 @@ public class SetupActivity extends Activity {
             Toast.makeText(this, "Database URL ghalat hai (https:// se shuru ho)", Toast.LENGTH_LONG).show();
             return;
         }
+        // CONSENT LAZMI: agreement parhe baghair setup aage nahi barhega
+        if (cbConsent == null || !cbConsent.isChecked()) {
+            Toast.makeText(this, "Pehle sale agreement parhein aur consent checkbox tick karein",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         if (!isAdminActive()) {
             Toast.makeText(this, "Pehle Device Admin ON karein — ye lazmi hai", Toast.LENGTH_LONG).show();
             return;
@@ -172,21 +207,26 @@ public class SetupActivity extends Activity {
         String monthly = etMonthly.getText().toString().trim();
         String paid = etPaid.getText().toString().trim();
         if (paid.isEmpty()) paid = "0";
+        String sellerPin = etSellerPin.getText().toString().trim();
 
         SharedPreferences p = getSharedPreferences("installtrack", MODE_PRIVATE);
         p.edit()
                 .putString("db_url", dbUrl)
                 .putString("db_auth", etDbAuth.getText().toString().trim())
-                .putString("seller_pin", etSellerPin.getText().toString().trim())
+                .putString("seller_pin", sellerPin)
                 .putString("buyer_name", buyer)
                 .putString("total_qist", total)
                 .putString("monthly", monthly)
                 .putString("paid", paid)
+                .putBoolean("consent_accepted", true)
+                .putLong("consent_time", System.currentTimeMillis())
+                .putString("consent_text_version", ConsentText.CONSENT_VERSION)
                 .putBoolean("setup_done", true)
                 .apply();
 
-        // Register device in Firebase
+        // Register device in Firebase (PIN ka sirf HASH bhejo — plain PIN kabhi nahi)
         final String fBuyer = buyer, fTotal = total, fMonthly = monthly, fPaid = paid;
+        final String fPinHash = DeviceOwnerHelper.pinHashHex(sellerPin);
         new Thread(new Runnable() {
             @Override public void run() {
                 FirebaseRest fb = new FirebaseRest();
@@ -200,6 +240,17 @@ public class SetupActivity extends Activity {
                             + ",\"adminActive\":\"true\"}";
                     fb.put("/devices/" + id + "/info", info);
                     fb.put("/devices/" + id + "/status", FirebaseRest.quote("active"));
+                    fb.put("/devices/" + id + "/deviceOwner",
+                            DeviceOwnerHelper.isDeviceOwner(SetupActivity.this)
+                                    ? "true" : "false");
+                    fb.put("/devices/" + id + "/consent",
+                            "{\"accepted\":true,\"version\":"
+                                    + FirebaseRest.quote(ConsentText.CONSENT_VERSION)
+                                    + ",\"time\":" + System.currentTimeMillis() + "}");
+                    if (!fPinHash.isEmpty()) {
+                        fb.put("/devices/" + id + "/sellerPinHash",
+                                FirebaseRest.quote(fPinHash));
+                    }
                 }
             }
         }).start();

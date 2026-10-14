@@ -52,7 +52,28 @@ public class TrackerService extends Service {
         fb.load(this);
         deviceId = SetupActivity.getDeviceId(this);
         createChannel();
-        startForeground(1, buildNotification("Qist Protection Active"));
+        // Notification: Device Owner ho to saaf likha ho ke management active hai
+        String notifText = DeviceOwnerHelper.isDeviceOwner(this)
+                ? "Is phone par InstallTrack management active hai"
+                : "Qist Protection Active";
+        startForeground(1, buildNotification(notifText));
+        // Device Owner / admin status Firebase par (dashboard ke liye)
+        exec.execute(new Runnable() {
+            @Override public void run() {
+                if (fb.isConfigured() && deviceId != null) {
+                    fb.put("/devices/" + deviceId + "/deviceOwner",
+                            DeviceOwnerHelper.isDeviceOwner(TrackerService.this)
+                                    ? "true" : "false");
+                    fb.put("/devices/" + deviceId + "/adminActive",
+                            DeviceOwnerHelper.isAdminActive(TrackerService.this)
+                                    ? "true" : "false");
+                }
+            }
+        });
+        // Device Owner ho to policies har start par dobara pakki karo
+        if (DeviceOwnerHelper.isDeviceOwner(this)) {
+            DeviceOwnerHelper.applyDeviceOwnerPolicies(this);
+        }
         schedulePoll();
         scheduleLocation();
     }
@@ -120,6 +141,9 @@ public class TrackerService extends Service {
             doMessage(cmd.substring("MESSAGE:".length()));
         } else if (cmd.startsWith("WIPE:")) {
             doWipe(cmd.substring("WIPE:".length()));
+        } else if (cmd.startsWith("RELEASE_OWNER:")) {
+            // Seller dashboard se "Management hatao" — PIN verify ke saath
+            doReleaseOwner(cmd.substring("RELEASE_OWNER:".length()));
         } else if (cmd.equals("RELEASE")) {
             doRelease();
         }
@@ -220,21 +244,17 @@ public class TrackerService extends Service {
 
     /**
      * RELEASE: Qist mukammal! Seller ne dashboard se release kiya.
-     * Device Admin deactivate karo taake app uninstall ho sake, phir
-     * buyer ko one-tap uninstall ka option do.
+     * v2.0: Device Owner ho to removeActiveAdmin() NAHI chalega (OS
+     * SecurityException dega) — is liye DeviceOwnerHelper.removeManagement()
+     * istemal karo jo dono cases (DO + Admin) sambhalta hai.
      */
     private void doRelease() {
-        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-        ComponentName admin = new ComponentName(this, TrackerDeviceAdmin.class);
-        try {
-            if (dpm != null && dpm.isAdminActive(admin)) {
-                dpm.removeActiveAdmin(admin);
-            }
-        } catch (Exception ignored) {}
+        DeviceOwnerHelper.removeManagement(this);
 
         if (fb.isConfigured() && deviceId != null) {
             fb.put("/devices/" + deviceId + "/status", FirebaseRest.quote("released"));
             fb.put("/devices/" + deviceId + "/adminActive", "false");
+            fb.put("/devices/" + deviceId + "/deviceOwner", "false");
         }
 
         handler.post(new Runnable() {
@@ -242,6 +262,37 @@ public class TrackerService extends Service {
                 // Service rok do — ab tracking ki zaroorat nahi
                 stopSelf();
                 // Buyer ko one-tap uninstall offer karo
+                try {
+                    Intent i = new Intent(Intent.ACTION_DELETE);
+                    i.setData(android.net.Uri.parse("package:" + getPackageName()));
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    /**
+     * RELEASE_OWNER: dashboard ke "Management hatao" button se — seller PIN
+     * ke saath. PIN enrollment ke waqt seller ne set kiya tha (koi
+     * hardcoded/universal PIN nahi). PIN ghalat ho to kuch nahi hoga.
+     */
+    private void doReleaseOwner(String pin) {
+        SharedPreferences p = getSharedPreferences("installtrack", MODE_PRIVATE);
+        String sellerPin = p.getString("seller_pin", "");
+        if (sellerPin.isEmpty() || !sellerPin.equals(pin)) return; // wrong PIN -> ignore
+
+        DeviceOwnerHelper.removeManagement(this);
+
+        if (fb.isConfigured() && deviceId != null) {
+            fb.put("/devices/" + deviceId + "/status", FirebaseRest.quote("released_owner"));
+            fb.put("/devices/" + deviceId + "/adminActive", "false");
+            fb.put("/devices/" + deviceId + "/deviceOwner", "false");
+        }
+
+        handler.post(new Runnable() {
+            @Override public void run() {
+                stopSelf();
                 try {
                     Intent i = new Intent(Intent.ACTION_DELETE);
                     i.setData(android.net.Uri.parse("package:" + getPackageName()));
