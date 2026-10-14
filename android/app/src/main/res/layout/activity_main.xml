@@ -35,6 +35,26 @@
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
+    <TextView android:id="@+id/tvDoStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFD54F"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <Button android:id="@+id/btnSellerRemove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🛡️ Seller: Management hatao (Qist poori)"
+        android:layout_marginBottom="8dp" />
+
+    <Button android:id="@+id/btnQr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📷 QR Provisioning code"
+        android:layout_marginBottom="8dp" />
+
     <Button android:id="@+id/btnReEnable"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

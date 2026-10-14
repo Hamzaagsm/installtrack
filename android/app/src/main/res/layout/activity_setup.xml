@@ -30,6 +30,26 @@
             android:padding="12dp"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🛡️ Device Owner status:"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+        <TextView android:id="@+id/tvDoStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Check ho raha hai..."
+            android:textColor="#FFD54F"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+        <Button android:id="@+id/btnQr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📷 QR Provisioning code dikhao (setup-time enrollment)"
+            android:layout_marginBottom="16dp" />
+
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Firebase Database URL (seller dega):" android:textColor="#FFFFFF" />
         <EditText android:id="@+id/etDbUrl"
@@ -101,6 +121,27 @@
         <TextView android:id="@+id/tvLocStatus"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textColor="#FFFFFF" android:textSize="13sp"
+            android:layout_marginBottom="16dp" />
+
+        <Button android:id="@+id/btnShowAgreement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📄 Poora sale agreement parho (Roman Urdu + English)"
+            android:layout_marginBottom="4dp" />
+        <TextView android:id="@+id/tvConsentFull"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:background="#263238"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+        <CheckBox android:id="@+id/cbConsent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Maine sale agreement parha aur samajh liya hai — tracker, location, lock aur Device Owner management se mutafiq hon."
+            android:textColor="#FFFFFF"
             android:layout_marginBottom="16dp" />
 
         <Button android:id="@+id/btnFinish"
