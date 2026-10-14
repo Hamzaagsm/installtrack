@@ -1,4 +1,4 @@
-name: Build InstallTrack APK
+name: Build InstallTrack v2 APK
 
 on:
   workflow_dispatch:
@@ -24,10 +24,10 @@ jobs:
           gradle assembleDebug --no-daemon -x lint
       - name: Rename APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk InstallTrack.apk
-          ls -la InstallTrack.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk InstallTrack-v2.apk
+          ls -la InstallTrack-v2.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: InstallTrack-apk
-          path: InstallTrack.apk
+          name: InstallTrack-v2-apk
+          path: InstallTrack-v2.apk
