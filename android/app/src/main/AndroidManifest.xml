@@ -30,6 +30,8 @@
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
+        <activity android:name=".QrActivity" android:exported="false" />
+        <activity android:name=".SellerRemoveActivity" android:exported="false" />
 
         <receiver android:name=".TrackerDeviceAdmin"
             android:exported="false"
@@ -38,6 +40,8 @@
                 android:resource="@xml/device_admin" />
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <!-- QR provisioning mukammal hone par system ye broadcast bhejta hai -->
+                <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
             </intent-filter>
         </receiver>
 
