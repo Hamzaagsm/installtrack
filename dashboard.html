@@ -36,14 +36,28 @@
 <div class="card" id="configCard">
   <h3>🔧 Firebase Config</h3>
   <div id="configForm">
-    <input id="cfgApiKey" placeholder="apiKey" value="AIzaSyDsWdTh2rQd1daCrtRKiuuUDF1s5kTn8vE">
+    <input id="cfgApiKey" placeholder="apiKey">
     <input id="cfgAuthDomain" placeholder="authDomain (project.firebaseapp.com)">
-    <input id="cfgDbUrl" placeholder="databaseURL" value="https://hamza-installtrack-default-rtdb.asia-southeast1.firebasedatabase.app">
+    <input id="cfgDbUrl" placeholder="databaseURL">
     <input id="cfgProjectId" placeholder="projectId">
     <button class="btn-msg btn-small" onclick="saveConfig()">💾 Save &amp; Connect</button>
     <p class="muted">Ye browser me save rehta hai (localStorage). Console: <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a></p>
   </div>
   <p id="connStatus" class="muted">Not connected</p>
+</div>
+
+<div class="card">
+  <h3>📷 QR Provisioning (Device Owner enrollment)</h3>
+  <p class="muted">QR code app ke andar banta hai: buyer ke phone par InstallTrack kholo → "QR Provisioning code". QR me ye JSON hota hai (signature checksum app apne signature se live compute karti hai):</p>
+  <pre style="white-space: pre-wrap; background: #0f172a; padding: 10px; border-radius: 8px; font-size: 13px;">{
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME": "com.hamza.installtrack/.TrackerDeviceAdmin",
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM": "&lt;app se live compute hota hai&gt;",
+  "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION": "&lt;APK ki https URL&gt;",
+  "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": true,
+  "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": true,
+  "android.app.extra.PROVISIONING_SKIP_EDUCATION": true
+}</pre>
+  <p class="muted">Tareeqa: phone factory reset → setup wizard (welcome screen par 6 dafa tap) → QR scan → system app download karke Device Owner bana dega. Mukammal steps README me hain.</p>
 </div>
 
 <div id="devices"></div>
@@ -123,6 +137,14 @@ function doRelease(id) {
   sendCmd(id, 'RELEASE');
 }
 
+// v2.0: Device Owner management hatana — seller PIN ke saath
+function doReleaseOwner(id) {
+  const pin = prompt('🛡️ SELLER PIN (management hatane ke liye):');
+  if (!pin) return;
+  if (!confirm('Qist mukammal? Device Owner management HAT jayegi — factory reset + uninstall block khatam.')) return;
+  sendCmd(id, 'RELEASE_OWNER:' + pin);
+}
+
 function ackTamper(id) {
   if (!confirm('Tamper alert clear karein?')) return;
   db.ref('/devices/' + id + '/tamper').remove();
@@ -161,6 +183,7 @@ function watchDevices() {
       const tamper = d.tamper || null;
       const status = d.status || 'unknown';
       const statusCls = status === 'active' ? 'status-active' : status === 'locked' ? 'status-locked' : 'status-released';
+      const doStatus = d.deviceOwner === 'true' ? '🛡️ DO ACTIVE' : (d.deviceOwner === 'false' ? 'DO nahi' : 'DO: ?');
       const mapLink = (loc.lat != null)
         ? '<a target="_blank" href="https://maps.google.com/?q=' + loc.lat + ',' + loc.lng + '">📍 Map kholo</a>'
         : '<span class="muted">location nahi mili</span>';
@@ -177,7 +200,8 @@ function watchDevices() {
           ' <button class="btn-small" onclick="ackTamper(\'' + id + '\')">Clear</button></div>' : '') +
         '<h3>📱 ' + esc(info.name || id) + '</h3>' +
         '<p>Status: <span class="' + statusCls + '">' + esc(status.toUpperCase()) + '</span>' +
-        ' &nbsp;|&nbsp; Admin: ' + (d.adminActive === 'false' ? '❌ OFF' : '✅ ON') + '</p>' +
+        ' &nbsp;|&nbsp; Admin: ' + (d.adminActive === 'false' ? '❌ OFF' : '✅ ON') +
+        ' &nbsp;|&nbsp; ' + doStatus + '</p>' +
         '<p>💰 Kul: ' + esc(info.total || '-') + ' | ✅ Ada: ' + esc(info.paid || '0') +
         ' | 📌 Baqi: ' + (total - paid) + ' | 📅 Mahana: ' + esc(info.monthly || '-') +
         ' <button class="btn-small btn-msg" onclick="updatePaid(\'' + id + '\',\'' + esc(info.paid || '0') + '\')">Update</button></p>' +
@@ -188,6 +212,7 @@ function watchDevices() {
         '<button class="btn-small btn-ring" onclick="sendCmd(\'' + id + '\',\'RING\')">🔔 Ring</button>' +
         '<button class="btn-small btn-msg" onclick="doMessage(\'' + id + '\')">💬 Pegham</button>' +
         '<button class="btn-small btn-release" onclick="doRelease(\'' + id + '\')">✅ Release (Qist Done)</button>' +
+        '<button class="btn-small btn-release" onclick="doReleaseOwner(\'' + id + '\')">🛡️ Management hatao (PIN)</button>' +
         '<button class="btn-small btn-wipe" onclick="doWipe(\'' + id + '\')">🗑️ Wipe</button>' +
         '</div>' +
         '<p class="muted">Device ID: ' + esc(id) + '</p>';
